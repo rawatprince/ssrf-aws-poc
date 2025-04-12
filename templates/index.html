@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSRF PoC Tool - Side-by-Side</title>
+    <style>
+        /* Basic Styling */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f4f4f4; /* Light grey background for the page */
+            color: #333; /* Default text color */
+        }
+        /* Container to center content and add padding/shadow */
+        .container {
+            max-width: 1200px; /* Allow wider container for side-by-side */
+            margin: 20px auto; /* Center the container */
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Subtle shadow effect */
+            border-radius: 8px; /* Rounded corners */
+            background-color: #fff; /* White background for the main content area */
+        }
+        h1, h2, h3 {
+            color: #333; /* Dark text for headings */
+        }
+
+        /* Flexbox container for the main layout */
+        .main-content {
+            display: flex; /* Enable Flexbox */
+            flex-wrap: wrap; /* Allow items to wrap onto the next line on smaller screens */
+            gap: 20px; /* Space between the form and response sections */
+        }
+
+        /* Styling for both the request form and response sections */
+        .request-form-section, .response-section {
+            flex: 1; /* Allow both sections to grow and shrink equally */
+            min-width: 300px; /* Minimum width before wrapping occurs */
+            background: #f9f9f9; /* Slightly off-white background for the form section */
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd; /* Light grey border */
+            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        }
+
+        /* Specific Styling for the Request Form Section */
+        .request-form-section h2 {
+             margin-top: 0; /* Remove default top margin */
+             border-bottom: 1px solid #eee; /* Separator line */
+             padding-bottom: 10px;
+             margin-bottom: 20px;
+        }
+        label {
+            display: block; /* Make labels appear on their own line */
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        /* Styling for form inputs, select dropdown, and textareas */
+        input[type="text"], select, textarea {
+            width: 100%; /* Make form elements take full width of their container */
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc; /* Standard border */
+            border-radius: 4px;
+            box-sizing: border-box; /* Consistent sizing */
+            font-size: 1rem; /* Standard font size */
+        }
+        textarea {
+            height: 120px; /* Default height for textareas */
+            resize: vertical; /* Allow users to resize vertically */
+        }
+        /* Styling for the submit button */
+        button {
+            display: inline-block;
+            padding: 12px 25px;
+            margin-top: 20px;
+            background-color: #dc3545; /* Red color indicating potential danger */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease; /* Smooth hover effect */
+        }
+        button:hover {
+            background-color: #c82333; /* Darker red on hover */
+        }
+
+        /* Styling for the Response Section */
+        .response-section {
+            /* Inherits flex sizing from .main-content */
+            background-color: #fff; /* White background for contrast */
+        }
+        .response-section h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        /* Styling for preformatted text (code blocks) */
+        pre {
+            white-space: pre-wrap;       /* CSS3 standard */
+            white-space: -moz-pre-wrap;  /* Firefox */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* IE 5.5+ */
+            background-color: #e9ecef; /* Light grey background for code */
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ced4da; /* Slightly darker border */
+            max-height: 450px; /* Limit height to prevent excessive scrolling */
+            overflow-y: auto; /* Add scrollbar if content exceeds max-height */
+            font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; /* Monospace font */
+            font-size: 0.9rem; /* Slightly smaller font size for code */
+        }
+        /* Styling for error messages */
+        .error {
+            color: #dc3545; /* Red text for errors */
+            font-weight: bold;
+            background-color: #f8d7da; /* Light red background */
+            border: 1px solid #f5c6cb; /* Red border */
+            padding: 10px;
+            border-radius: 4px;
+        }
+        /* Styling for the warning banner */
+        .warning-banner {
+            background-color: #fff3cd; /* Yellow background */
+            color: #856404; /* Dark yellow text */
+            border: 1px solid #ffeeba; /* Yellow border */
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px; /* Space below the banner */
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments using Media Query */
+        /* Styles apply when screen width is 768px or less */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column; /* Stack elements vertically instead of side-by-side */
+            }
+            /* Ensure sections take full width when stacked */
+            .request-form-section, .response-section {
+                 min-width: 100%;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SSRF PoC Request Tool</h1>
+
+        <div class="warning-banner">
+            ⚠️ Warning: This tool executes server-side requests based on your input below. Use with extreme caution, especially with internal URLs like <code>http://169.254.169.245/...</code> or file paths. Understand the risks before proceeding.
+        </div>
+
+        <div class="main-content">
+
+            <div class="request-form-section">
+                <h2>Craft Request</h2>
+                <form action="/fetch" method="POST" id="request-form">
+                    <label for="method">Method:</label>
+                    <select id="method" name="method" required>
+                        <option value="GET" {% if form_data and form_data.get('method') == 'GET' %}selected{% endif %}>GET</option>
+                        <option value="POST" {% if form_data and form_data.get('method') == 'POST' %}selected{% endif %}>POST</option>
+                        <option value="PUT" {% if form_data and form_data.get('method') == 'PUT' %}selected{% endif %}>PUT</option>
+                        <option value="DELETE" {% if form_data and form_data.get('method') == 'DELETE' %}selected{% endif %}>DELETE</option>
+                        <option value="HEAD" {% if form_data and form_data.get('method') == 'HEAD' %}selected{% endif %}>HEAD</option>
+                        <option value="OPTIONS" {% if form_data and form_data.get('method') == 'OPTIONS' %}selected{% endif %}>OPTIONS</option>
+                    </select>
+
+                    <label for="url">URL:</label>
+                    <input type="text" id="url" name="url" placeholder="e.g., http://example.com OR http://169.254.169.254/latest/meta-data/" value="{{ form_data.get('url', '') if form_data else '' }}" required>
+
+                    <label for="headers">Headers (one per line, e.g., Header-Name: Value):</label>
+                    <textarea id="headers" name="headers" placeholder="X-aws-ec2-metadata-token-ttl-seconds: 21600&#10;X-aws-ec2-metadata-token: <token>&#10;Content-Type: application/json">{{ form_data.get('headers', '') if form_data else '' }}</textarea>
+
+                    <label for="body">Request Body (optional):</label>
+                    <textarea id="body" name="body">{{ form_data.get('body', '') if form_data else '' }}</textarea>
+
+                    <button type="submit">Send Request</button>
+                </form>
+            </div> {% if response %}
+            <div class="response-section">
+                <h2>Response Received</h2>
+
+                {% if response.error %}
+                    <p class="error">Error: {{ response.error }}</p>
+                {% else %}
+                    <h3>Status Code:</h3>
+                    <pre>{{ response.status_code }}</pre>
+
+                    <h3>Headers:</h3>
+                    <pre>{{ response.headers }}</pre>
+
+                    <h3>Body:</h3>
+                    <pre>{{ response.body }}</pre>
+                {% endif %}
+            </div> {% endif %} </div> </div> </body>
+</html>
+
